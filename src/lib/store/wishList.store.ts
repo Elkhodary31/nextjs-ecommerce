@@ -6,6 +6,7 @@ import {
 } from "../services/wishList.service";
 import { IProduct } from "../interfaces/product";
 import { IWishlistState } from "../interfaces/wishlist";
+import toast from "react-hot-toast";
 
 const LOCAL_KEY = "wishlist_guide_ids";
 
@@ -17,14 +18,11 @@ export const useWishlistStore = create<IWishlistState>((set, get) => ({
   loading: false,
   error: null,
 
-  setToken: (token) => {
-    set({ token });
-  },
+  setToken: (token) => set({ token }),
 
   loadWishlist: async () => {
     const { token } = get();
 
-    // ---------- GUEST ----------
     if (!token) {
       const raw = localStorage.getItem(LOCAL_KEY);
       const ids = raw ? JSON.parse(raw) : [];
@@ -36,64 +34,99 @@ export const useWishlistStore = create<IWishlistState>((set, get) => ({
       return;
     }
 
-    // ---------- LOGGED-IN ----------
     try {
-      set({ loading: true, error: null });
-
+      set({ loading: true });
       const res = await getWishList(token);
       const products = res.data || [];
-      const count = res.count || 0;
       const ids = products.map((p: IProduct) => p._id || p.id);
 
       set({
         wishlistProducts: products,
         wishlistIds: ids,
-        wishListCount: count ?? ids.length,
+        wishListCount: ids.length,
       });
-    } catch (err: any) {
-      set({ error: err.message || "Failed to load wishlist" });
+    } catch {
+      toast.error("Failed to load wishlist");
     } finally {
       set({ loading: false });
     }
   },
 
-  toggleWishlist: async (productId: string) => {
-    const { token, wishlistIds } = get();
+  toggleWishlist: async (productId: string, opts?: { silent?: boolean }) => {
+    const { token, wishlistIds, wishlistProducts } = get();
+    const exists = wishlistIds.includes(productId);
+    const prevState = get();
+
     // ---------- GUEST ----------
     if (!token) {
-      console.log("I am here", token);
-      const exists = wishlistIds.includes(productId);
       const updated = exists
         ? wishlistIds.filter((id) => id !== productId)
         : [...wishlistIds, productId];
 
       localStorage.setItem(LOCAL_KEY, JSON.stringify(updated));
-      set({ wishlistIds: updated, wishListCount: updated.length });
+
+      set({
+        wishlistIds: updated,
+        wishListCount: updated.length,
+      });
+
+      if (!opts?.silent) {
+        toast.success(exists ? "Removed from wishlist" : "Added to wishlist");
+      }
       return;
     }
 
-    // ---------- LOGGED-IN ----------
+    // ---------- LOGGED-IN (OPTIMISTIC) ----------
+    set({
+      wishlistIds: exists
+        ? wishlistIds.filter((id) => id !== productId)
+        : [...wishlistIds, productId],
+      wishlistProducts: exists
+        ? wishlistProducts.filter((p) => p._id !== productId)
+        : wishlistProducts,
+      wishListCount: exists ? wishlistIds.length - 1 : wishlistIds.length + 1,
+    });
+
     try {
-      set({ loading: true, error: null });
+      exists
+        ? await removeFromWishlist(productId, token)
+        : await addToWishlist(productId, token);
 
-      console.log("I am here");
-      const exists = wishlistIds.includes(productId);
-
-      if (exists) {
-        await removeFromWishlist(productId, token);
-      } else {
-        await addToWishlist(productId, token);
+      if (!opts?.silent) {
+        toast.success(exists ? "Removed from wishlist" : "Added to wishlist");
       }
-
-      await get().loadWishlist();
-    } catch (err: any) {
-      set({ error: err.message || "Wishlist operation failed" });
-    } finally {
-      set({ loading: false });
+    } catch {
+      set(prevState);
+      if (!opts?.silent) toast.error("Something went wrong");
     }
   },
 
-  isInWishlist: (productId: string) => {
-    return get().wishlistIds.includes(productId);
+  clearWishlist: async () => {
+    const { token, wishlistIds } = get();
+    const prevState = get();
+
+    if (!wishlistIds.length) return;
+
+    set({
+      wishlistIds: [],
+      wishlistProducts: [],
+      wishListCount: 0,
+    });
+
+    if (!token) {
+      localStorage.removeItem(LOCAL_KEY);
+      toast.success("Wishlist cleared");
+      return;
+    }
+
+    try {
+      await Promise.all(wishlistIds.map((id) => removeFromWishlist(id, token)));
+      toast.success("Wishlist cleared");
+    } catch {
+      set(prevState);
+      toast.error("Failed to clear wishlist");
+    }
   },
+
+  isInWishlist: (id: string) => get().wishlistIds.includes(id),
 }));

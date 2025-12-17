@@ -20,6 +20,7 @@ export interface IWishlistState {
 
   setToken: (token: string | null) => void;
   loadWishlist: () => Promise<void>;
-  toggleWishlist: (productId: string) => Promise<void>;
+  toggleWishlist: (productId: string, opts?: { silent?: boolean }) => Promise<void>;
   isInWishlist: (productId: string) => boolean;
+  clearWishlist: () => Promise<void>;
 }

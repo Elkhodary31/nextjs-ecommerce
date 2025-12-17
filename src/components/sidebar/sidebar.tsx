@@ -9,7 +9,7 @@ import { IBrand } from "@/lib/interfaces/brand";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function Sidebar2() {
+export default function Sidebar() {
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [brands, setBrands] = useState<IBrand[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -17,6 +17,8 @@ export default function Sidebar2() {
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(5000);
   const [scrolled, setScrolled] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingBrands, setLoadingBrands] = useState(true);
 
   const [openSections, setOpenSections] = useState({
     price: true,
@@ -82,10 +84,16 @@ export default function Sidebar2() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const c = await getAllCategories();
-      const b = await getAllBrands();
-      setCategories(c.data);
-      setBrands(b.data);
+      try {
+        setLoadingCategories(true);
+        setLoadingBrands(true);
+        const [c, b] = await Promise.all([getAllCategories(), getAllBrands()]);
+        setCategories(c.data);
+        setBrands(b.data);
+      } finally {
+        setLoadingCategories(false);
+        setLoadingBrands(false);
+      }
     };
     fetchData();
   }, []);
@@ -104,7 +112,8 @@ export default function Sidebar2() {
     >
       {/* PRICE */}
       <div className="border-b border-gray-200 group hover:bg-gray-100 transition-all rounded-md">
-        <button
+        <div
+          role="button"
           onClick={() => toggleSection("price")}
           className="flex justify-between items-center w-full px-2 py-2 font-semibold cursor-pointer"
         >
@@ -129,7 +138,7 @@ export default function Sidebar2() {
               }`}
             />
           </div>
-        </button>
+        </div>
       </div>
 
       <ul
@@ -188,7 +197,8 @@ export default function Sidebar2() {
 
       {/* CATEGORIES */}
       <div className="border-b border-gray-200 group hover:bg-gray-100 transition-all rounded-md mt-4">
-        <button
+        <div
+          role="button"
           onClick={() => toggleSection("categories")}
           className="flex justify-between items-center w-full px-2 py-2 font-semibold cursor-pointer"
         >
@@ -213,7 +223,7 @@ export default function Sidebar2() {
               }`}
             />
           </div>
-        </button>
+        </div>
       </div>
 
       <ul
@@ -223,31 +233,39 @@ export default function Sidebar2() {
             : "max-h-0 opacity-0 -mt-2"
         }`}
       >
-        {categories.map((cat) => (
-          <label
-            key={cat._id}
-            className="flex items-center gap-2 py-1 cursor-pointer"
-          >
-            <input
-              type="checkbox"
-              checked={selectedCategories.includes(cat._id)}
-              onChange={() => {
-                const updated = selectedCategories.includes(cat._id)
-                  ? selectedCategories.filter((c) => c !== cat._id)
-                  : [...selectedCategories, cat._id];
-                setSelectedCategories(updated);
-                updateURLParams("categories", updated);
-              }}
-              className="w-4 h-4"
-            />
-            {cat.name}
-          </label>
-        ))}
+        {loadingCategories
+          ? [...Array(6)].map((_, i) => (
+              <div key={i} className="flex items-center gap-2 py-1">
+                <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+              </div>
+            ))
+          : categories.map((cat) => (
+              <label
+                key={cat._id}
+                className="flex items-center gap-2 py-1 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedCategories.includes(cat._id)}
+                  onChange={() => {
+                    const updated = selectedCategories.includes(cat._id)
+                      ? selectedCategories.filter((c) => c !== cat._id)
+                      : [...selectedCategories, cat._id];
+                    setSelectedCategories(updated);
+                    updateURLParams("categories", updated);
+                  }}
+                  className="w-4 h-4"
+                />
+                {cat.name}
+              </label>
+            ))}
       </ul>
 
       {/* BRANDS */}
       <div className="border-b border-gray-200 group hover:bg-gray-100 transition-all rounded-md mt-4">
-        <button
+        <div
+          role="button"
           onClick={() => toggleSection("brands")}
           className="flex justify-between items-center w-full px-2 py-2 font-semibold cursor-pointer"
         >
@@ -272,7 +290,7 @@ export default function Sidebar2() {
               }`}
             />
           </div>
-        </button>
+        </div>
       </div>
 
       <ul
@@ -282,26 +300,33 @@ export default function Sidebar2() {
             : "max-h-0 opacity-0 -mt-2"
         }`}
       >
-        {brands.slice(0, 10).map((brand) => (
-          <label
-            key={brand._id}
-            className="flex items-center gap-2 py-1 cursor-pointer"
-          >
-            <input
-              type="checkbox"
-              checked={selectedBrands.includes(brand._id)}
-              onChange={() => {
-                const updated = selectedBrands.includes(brand._id)
-                  ? selectedBrands.filter((b) => b !== brand._id)
-                  : [...selectedBrands, brand._id];
-                setSelectedBrands(updated);
-                updateURLParams("brands", updated);
-              }}
-              className="w-4 h-4"
-            />
-            {brand.name}
-          </label>
-        ))}
+        {loadingBrands
+          ? [...Array(8)].map((_, i) => (
+              <div key={i} className="flex items-center gap-2 py-1">
+                <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+              </div>
+            ))
+          : brands.slice(0, 10).map((brand) => (
+              <label
+                key={brand._id}
+                className="flex items-center gap-2 py-1 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedBrands.includes(brand._id)}
+                  onChange={() => {
+                    const updated = selectedBrands.includes(brand._id)
+                      ? selectedBrands.filter((b) => b !== brand._id)
+                      : [...selectedBrands, brand._id];
+                    setSelectedBrands(updated);
+                    updateURLParams("brands", updated);
+                  }}
+                  className="w-4 h-4"
+                />
+                {brand.name}
+              </label>
+            ))}
       </ul>
 
       {openSections.brands && (

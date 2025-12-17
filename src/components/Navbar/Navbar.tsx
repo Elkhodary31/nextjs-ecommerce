@@ -29,6 +29,7 @@ import { ISubcategory } from "@/lib/interfaces/subcategory";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useWishlistStore } from "@/lib/store/wishList.store";
+import { useCart } from "@/context/CartProvider";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -39,6 +40,7 @@ export default function Navbar() {
   const session = useSession();
   const wishListCount = useWishlistStore((state) => state.wishListCount);
   const loadWishlist = useWishlistStore((state) => state.loadWishlist);
+  const { cartCount } = useCart();
   useEffect(() => {
     loadWishlist();
   }, [session?.data?.token]);
@@ -110,15 +112,22 @@ export default function Navbar() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <ShoppingCart className="w-6 h-6 cursor-pointer hover:text-green-500 hover:fill-green-500 transition" />
+                    <Link href="/cart" className="relative">
+                      <ShoppingCart className="w-6 h-6 cursor-pointer hover:text-green-500 hover:fill-green-500 transition" />
+                      {cartCount > 0 && (
+                        <span className="absolute -top-1 -right-2 bg-green-500 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
+                          {cartCount}
+                        </span>
+                      )}
+                    </Link>
                   </TooltipTrigger>
                   <TooltipContent>Cart</TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link href="/wishlist" className="relative">
-                      <Heart className="w-6 h-6 cursor-pointer hover:text-red-500 hover:fill-red-500 transition" />
+                    <Link href="/wishlist" className="relative ">
+                      <Heart className="w-6 h-6 cursor-pointer hover:text-red-500 hover:fill-red-500 transition " />
                       {wishListCount > 0 && (
                         <span className="absolute -top-1 -right-2 bg-red-500 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
                           {wishListCount}

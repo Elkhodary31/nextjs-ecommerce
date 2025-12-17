@@ -42,6 +42,7 @@ export default function Products() {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [metaData, setMetaData] = useState<IMetadata>();
   const [results, setResults] = useState<number>(0);
+  const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const category = searchParams.get("categories");
   const brand = searchParams.get("brand");
@@ -79,19 +80,24 @@ export default function Products() {
   };
   useEffect(() => {
     const fetchProduct = async () => {
-      const productData = await getAllProducts({
-        page: currentPage,
-        limit,
-        categories: category ? [category] : [],
-        brands: brand ? [brand] : [],
-        minPrice: minPrice ? Number(minPrice) : undefined,
-        maxPrice: maxPrice ? Number(maxPrice) : undefined,
-        sort: currentSort !== "relevance" ? currentSort : undefined,
-      });
+      setLoading(true);
+      try {
+        const productData = await getAllProducts({
+          page: currentPage,
+          limit,
+          categories: category ? [category] : [],
+          brands: brand ? [brand] : [],
+          minPrice: minPrice ? Number(minPrice) : undefined,
+          maxPrice: maxPrice ? Number(maxPrice) : undefined,
+          sort: currentSort !== "relevance" ? currentSort : undefined,
+        });
 
-      setProducts(productData.data);
-      setMetaData(productData.metadata);
-      setResults(productData.results || 0);
+        setProducts(productData.data);
+        setMetaData(productData.metadata);
+        setResults(productData.results || 0);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchProduct();
@@ -139,14 +145,18 @@ export default function Products() {
       </div>
 
       <div className="grid grid-cols-4 gap-4">
-        {products.map((product) => (
-          <ProductCard
-            key={product._id}
-            product={product}
-            isWished={wishlistIds.includes(product._id)}
-            onToggleWish={toggleWishlist}
-          />
-        ))}
+        {loading
+          ? [...Array(limit)].map((_, i) => (
+              <div key={i} className="bg-gray-200 h-96 rounded-2xl animate-pulse"></div>
+            ))
+          : products.map((product) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                isWished={wishlistIds.includes(product._id)}
+                onToggleWish={toggleWishlist}
+              />
+            ))}
       </div>
 
       {metaData && (

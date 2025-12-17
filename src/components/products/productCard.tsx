@@ -1,16 +1,11 @@
 "use client";
-import { IProduct } from "@/lib/interfaces/product";
 import ProductImage from "./productImage";
 import { Star, ShoppingCart, Heart, Trash2 } from "lucide-react";
 import { useState, memo } from "react";
-
-interface Props {
-  product: IProduct;
-  isWished?: boolean;
-  onToggleWish?: (id: string) => void;
-  showRemove?: boolean;
-  onRemove?: (id: string) => void;
-}
+import { IproductCardProps } from "@/lib/interfaces/productCard";
+import { IProduct } from "@/lib/interfaces/product";
+import Link from "next/link";
+import { useCart } from "@/context/CartProvider";
 
 function ProductCard({
   product,
@@ -18,15 +13,20 @@ function ProductCard({
   onToggleWish,
   showRemove,
   onRemove,
-}: Props) {
+}: IproductCardProps) {
   const [hover, setHover] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const p = product as IProduct & { id?: string };
+  const productId = (p._id ?? p.id) as string;
+  const { addItemToCart } = useCart();
 
   return (
-    <div
+    <Link
+      href={productId ? `/product/${productId}` : "#"}
       className="
-        w-full bg-gray-100 h-96 rounded-2xl shadow-sm border 
-        hover:shadow-xl hover:-translate-y-1 transition-all duration-300
-        flex flex-col overflow-hidden cursor-pointer
+        w-full h-96 rounded-2xl bg-gradient-to-br from-gray-50 to-white border border-gray-200 shadow-md
+        hover:shadow-lg hover:-translate-y-1 transition-all duration-300
+        ring-1 ring-transparent hover:ring-gray-300 flex flex-col overflow-hidden cursor-pointer group
       "
     >
       <div
@@ -47,19 +47,22 @@ function ProductCard({
           </span>
         )}
 
-        <Heart
-          size={22}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleWish?.(product._id);
-          }}
-          className={`
+        {!showRemove && (
+          <Heart
+            size={22}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleWish?.(product._id);
+            }}
+            className={`
             absolute top-3 right-3 hover:fill-red-500 transition-all duration-300 
             cursor-pointer  
             ${isWished ? "text-red-500 fill-red-500" : "text-gray-400"}
             ${hover ? "scale-110 " : "scale-100"}
           `}
-        />
+          />
+        )}
       </div>
 
       <div className="p-3 flex flex-col justify-between flex-1">
@@ -85,8 +88,8 @@ function ProductCard({
         </h3>
 
         <div className="flex items-center justify-between mt-4">
-          <span className="text-2xl font-bold text-gray-900">
-            ${product.price}
+          <span className="text-xl font-semibold text-gray-900">
+            {product.price} <span className="text-sm text-gray-500">EGP</span>
           </span>
 
           <div className="flex items-center gap-2">
@@ -96,14 +99,29 @@ function ProductCard({
                 flex items-center gap-1 bg-blue-600 text-white 
                 hover:bg-blue-700 transition-all duration-300 
                 px-3 py-2 rounded-lg text-sm shadow-sm
+                disabled:opacity-50 disabled:cursor-not-allowed
               "
+              onClick={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!productId || adding) return;
+                setAdding(true);
+                try {
+                  await addItemToCart(productId);
+                } finally {
+                  setAdding(false);
+                }
+              }}
+              disabled={adding}
+              title={adding ? "Adding to cart..." : "Add to cart"}
             >
-              <ShoppingCart size={18} /> Add
+              <ShoppingCart size={18} /> {adding ? "Adding..." : "Add"}
             </button>
 
             {showRemove && (
               <button
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   onRemove?.(product._id);
                 }}
@@ -115,7 +133,7 @@ function ProductCard({
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
