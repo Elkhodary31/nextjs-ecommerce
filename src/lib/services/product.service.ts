@@ -1,6 +1,7 @@
 import { IResponse } from "@/lib/interfaces/response";
 import { IProduct } from "@/lib/interfaces/product";
 import { IProductFilters } from "@/lib/interfaces/filters";
+import { BASE_URL } from "@/lib/constants/api";
 
 export async function getAllProducts({
   page = 1,
@@ -11,7 +12,7 @@ export async function getAllProducts({
   categories = [],
   brands = [],
 }: IProductFilters): Promise<IResponse<IProduct>> {
-  let url = `https://ecommerce.routemisr.com/api/v1/products?limit=${limit}&page=${page}`;
+  let url = `${BASE_URL}/products?limit=${limit}&page=${page}`;
 
   if (sort) url += `&sort=${sort}`;
   if (minPrice) url += `&price[gte]=${minPrice}`;
@@ -36,7 +37,7 @@ export async function getAllProducts({
   return data;
 }
 export async function getProductById(id: string): Promise<{ data: IProduct }> {
-  const url = `https://ecommerce.routemisr.com/api/v1/products/${id}`;
+  const url = `${BASE_URL}/products/${id}`;
 
   const res = await fetch(url);
 

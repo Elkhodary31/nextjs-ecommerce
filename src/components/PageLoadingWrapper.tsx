@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function PageLoadingWrapper({
@@ -9,14 +9,11 @@ export default function PageLoadingWrapper({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Listen for navigation start
-    const handleStart = () => setIsLoading(true);
-    const handleComplete = () => setIsLoading(false);
-
-    // Use router events if available
+    // Monkey-patch router to show a loading veil on navigation triggers
     const originalPush = router.push;
     const originalReplace = router.replace;
 
@@ -35,6 +32,11 @@ export default function PageLoadingWrapper({
       router.replace = originalReplace;
     };
   }, [router]);
+
+  // Close the loading veil when the URL actually changes
+  useEffect(() => {
+    if (isLoading) setIsLoading(false);
+  }, [pathname]);
 
   return (
     <>

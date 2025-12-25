@@ -7,7 +7,6 @@ import { CartProvider } from "@/context/CartProvider";
 import WishlistHydrator from "@/components/WishlistHydrator";
 import { Toaster } from "react-hot-toast";
 import NextTopLoader from "nextjs-toploader";
-import PageLoadingWrapper from "@/components/PageLoadingWrapper";
 
 export const metadata: Metadata = {
   title: "My Shop",
@@ -21,27 +20,25 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         <AuthProvider>
           <CartProvider>
-            <PageLoadingWrapper>
-              <NextTopLoader
-                color="#2563eb"
-                initialPosition={0.08}
-                crawlSpeed={200}
-                height={3}
-                crawl={true}
-                showSpinner={false}
-                easing="ease"
-                speed={200}
-                shadow="0 0 10px #2563eb,0 0 5px #2563eb"
-              />
-              <Toaster position="bottom-right" />
-              <Navbar />
-              <WishlistHydrator />
-              {children}
-              <Footer />
-            </PageLoadingWrapper>
+            <NextTopLoader
+              color="#2563eb"
+              initialPosition={0.08}
+              crawlSpeed={200}
+              height={3}
+              crawl={true}
+              showSpinner={false}
+              easing="ease"
+              speed={200}
+              shadow="0 0 10px #2563eb,0 0 5px #2563eb"
+            />
+            <Toaster position="bottom-right" />
+            <Navbar />
+            <WishlistHydrator />
+            {children}
+            <Footer />
           </CartProvider>
         </AuthProvider>
       </body>

@@ -1,9 +1,9 @@
 import { ICategory } from "../interfaces/category";
 import { IResponse } from "./../interfaces/response";
+import { BASE_URL } from "../constants/api";
+
 export async function getAllCategories() {
-  const response = await fetch(
-    `https://ecommerce.routemisr.com/api/v1/categories`
-  );
+  const response = await fetch(`${BASE_URL}/categories`);
   const data: IResponse<ICategory> = await response.json();
 
   console.log("FETCHING CATEGORIES...");
@@ -13,9 +13,7 @@ export async function getAllCategories() {
 }
 
 export async function getCategory({ id: { id: string } }) {
-  const response = await fetch(
-    `https://ecommerce.routemisr.com/api/v1/categories/${id}`
-  );
+  const response = await fetch(`${BASE_URL}/categories/${id}`);
   const data: IResponse<ICategory> = await response.json();
   return data;
 }

@@ -1,6 +1,10 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { getMytoken } from "@/app/utilities/getMyToken";
+import {
+  getMytoken,
+  getDecodedUserToken,
+  getUserIdFromToken,
+} from "@/app/utilities/getMyToken";
 import {
   ShoppingBag,
   TrendingUp,
@@ -25,9 +29,17 @@ async function getOrdersCount(): Promise<number> {
       next: { revalidate: 60 },
     });
 
-    // if (!res.ok) return 0;
-    const data = (await res.json()) as { orders: any[] };
-    return data.results;
+    console.log("orders data", res);
+    if (!res.ok) return 0;
+    const data = await res.json();
+
+    if (typeof data?.results === "number") return data.results as number;
+    const list = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.orders)
+      ? data.orders
+      : [];
+    return list.length;
   } catch {
     return 0;
   }
@@ -35,14 +47,23 @@ async function getOrdersCount(): Promise<number> {
 
 export default async function Page() {
   const ordersCount = await getOrdersCount();
-  console.log("ordersCount", ordersCount);
-  // Fake KPIs (can be wired up later)
+  const rawToken = await getMytoken();
+  const decodedToken = rawToken ? await getDecodedUserToken() : null;
+  const tokenId = rawToken ? await getUserIdFromToken() : null;
+  console.log("[About] raw API token present:", Boolean(rawToken));
+  console.log("[About] decoded API token payload:", decodedToken);
+  console.log("[About] API token id:", tokenId);
   const monthlySales = 1280; // products/month
   const activeCustomers = 3420; // users active
   const annualGross = 124_500; // USD
 
   return (
     <div className="my-container pt-28 md:pt-32 pb-20">
+      {/* Debug: show decoded API token id for testing */}
+      <div className="mb-6 text-sm text-muted-foreground">
+        <span className="font-medium">Decoded API Token ID:</span>{" "}
+        {String(tokenId ?? "none")}
+      </div>
       {/* Story */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
         <div className="space-y-4">

@@ -1,6 +1,7 @@
 import { ICartResponse, IClearCartResponse } from "../interfaces/cart";
+import { BASE_URL as API_BASE_URL } from "../constants/api";
 
-const BASE_URL = "https://ecommerce.routemisr.com/api/v1/cart";
+const BASE_URL = `${API_BASE_URL}/cart`;
 
 // ==================
 // ADD TO CART
@@ -130,4 +131,36 @@ export async function clearCart(token: string): Promise<IClearCartResponse> {
   }
 
   return (await res.json()) as IClearCartResponse;
+}
+
+// ==================
+// REORDER FROM ORDER
+// ==================
+export async function reorderFromOrder(
+  productIds: string[],
+  token: string
+): Promise<ICartResponse> {
+  console.log("[cart.service] reorderFromOrder:start", { productIds });
+  
+  let finalCart: ICartResponse | null = null;
+  
+  for (const productId of productIds) {
+    try {
+      finalCart = await addToCart(productId, token);
+    } catch (error) {
+      console.error(`[cart.service] reorderFromOrder: failed to add ${productId}`, error);
+      // Continue with next product even if one fails
+    }
+  }
+  
+  if (!finalCart) {
+    throw new Error("Failed to add any items to cart");
+  }
+  
+  console.log("[cart.service] reorderFromOrder:success", {
+    totalItems: productIds.length,
+    cartId: finalCart.cartId,
+  });
+  
+  return finalCart;
 }

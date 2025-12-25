@@ -28,7 +28,14 @@ export const authOptions: AuthOptions = {
           throw new Error(data.message || "Invalid credentials");
         }
 
-        return data;
+        // Return user object with token
+        return {
+          id: data.user?.email,
+          name: data.user?.name,
+          email: data.user?.email,
+          role: data.user?.role,
+          token: data.token,
+        };
       },
     }),
   ],

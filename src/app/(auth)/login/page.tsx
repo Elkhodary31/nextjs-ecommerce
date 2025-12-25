@@ -3,17 +3,28 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
 import loginImage from "@/../public/images/login.svg";
 import { ILoginRequest } from "@/lib/interfaces/auth";
-import { sign } from "crypto";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 
 export default function LoginPage() {
   const [errorCount, setErrorCount] = useState(0);
   const [error, setError] = useState("");
+  const [showForgotModal, setShowForgotModal] = useState(false);
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      toast.success("You are already logged in!");
+      router.push("/");
+    }
+  }, [status, router]);
+
   const {
     register,
     handleSubmit,
@@ -21,6 +32,20 @@ export default function LoginPage() {
   } = useForm<ILoginRequest>({
     mode: "onBlur",
   });
+
+  // Prevent hydration mismatch by not rendering until session is checked
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+      </div>
+    );
+  }
+
+  // If authenticated, don't render the form (will redirect via useEffect)
+  if (status === "authenticated") {
+    return null;
+  }
 
   async function handleLogin(data: ILoginRequest) {
     const x = await signIn("credentials", {
@@ -40,7 +65,6 @@ export default function LoginPage() {
       <div className="hidden md:flex items-center justify-center p-10">
         <Image src={loginImage} alt="Login" width={400} height={400} priority />
       </div>
-
       {/* FORM */}
       <div className="flex items-center justify-center bg-white">
         <div className="w-full max-w-md p-8 rounded-2xl shadow-xl">
@@ -117,11 +141,26 @@ export default function LoginPage() {
             {errorCount >= 2 && (
               <p className="text-sm text-red-600">
                 Forgot your password?{" "}
-                <Link href="/forgot-password" className="underline font-medium">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  className="underline font-medium hover:text-red-700"
+                >
                   Reset it here
-                </Link>
+                </button>
               </p>
             )}
+
+            {/* FORGOT PASSWORD LINK - Always visible */}
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(true)}
+                className="text-sm text-gray-600 hover:text-gray-800 underline"
+              >
+                Forgot password?
+              </button>
+            </div>
 
             {/* SUBMIT */}
             <button
@@ -155,6 +194,11 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+      {/* FORGOT PASSWORD MODAL */}
+      <ForgotPasswordModal
+        isOpen={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+      />{" "}
     </section>
   );
 }

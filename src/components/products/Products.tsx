@@ -30,7 +30,7 @@ export default function Products() {
   const updateFilter = (key: string, value: string) => {
     const newParams = new URLSearchParams(params.toString());
 
-    if (value === "relevance") {
+    if (key === "sort" && value === "relevance") {
       newParams.delete("sort");
     } else {
       newParams.set(key, value);
@@ -39,13 +39,36 @@ export default function Products() {
     router.replace("?" + newParams.toString(), { scroll: false });
   };
 
+  // Debounced limit input handling
+  const [limitInput, setLimitInput] = useState<string>(() =>
+    String(Number(params.get("limit") || 20))
+  );
+
+  // Apply after a short render-time delay
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      const parsed = parseInt(limitInput, 10);
+      if (!Number.isNaN(parsed)) {
+        const clamped = Math.max(1, Math.min(40, parsed));
+        if (clamped !== limit) {
+          const newParams = new URLSearchParams(params.toString());
+          newParams.set("limit", String(clamped));
+          // Reset to first page to avoid out-of-range pages
+          newParams.set("page", "1");
+          router.replace("?" + newParams.toString(), { scroll: false });
+        }
+      }
+    }, 600);
+    return () => clearTimeout(handle);
+  }, [limitInput, limit, params, router]);
+
   const [products, setProducts] = useState<IProduct[]>([]);
   const [metaData, setMetaData] = useState<IMetadata>();
   const [results, setResults] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const category = searchParams.get("categories");
-  const brand = searchParams.get("brand");
+  const brands = searchParams.get("brands");
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
   const changePage = (page: number) => {
@@ -85,26 +108,29 @@ export default function Products() {
         const productData = await getAllProducts({
           page: currentPage,
           limit,
-          categories: category ? [category] : [],
-          brands: brand ? [brand] : [],
+          categories: category ? category.split(",") : [],
+          brands: brands ? brands.split(",") : [],
           minPrice: minPrice ? Number(minPrice) : undefined,
           maxPrice: maxPrice ? Number(maxPrice) : undefined,
           sort: currentSort !== "relevance" ? currentSort : undefined,
         });
-
+        console.log("productData", productData);
+        console.log("loading", loading);
         setProducts(productData.data);
         setMetaData(productData.metadata);
         setResults(productData.results || 0);
-      } finally {
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
         setLoading(false);
       }
     };
 
     fetchProduct();
-  }, [category, brand, minPrice, maxPrice, currentSort, currentPage, limit]);
+  }, [category, brands, minPrice, maxPrice, currentSort, currentPage, limit]);
 
   return (
-    <div className="pt-28 ">
+    <div className="pt-8 lg:pt-28">
       <div className="flex items-center justify-between mb-6 px-2">
         {/* Left Side */}
         <div>
@@ -126,28 +152,45 @@ export default function Products() {
           </select>
 
           {/* Limit Selector */}
-          <div className="">
+          <div className="flex items-center gap-2">
             <input
-              type="text"
+              type="number"
               min={1}
               max={40}
-              defaultValue={20}
-              className="w-10 h-8 px-2 rounded-md border border-gray-300 no-
-            focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="40"
+              step={1}
+              value={limitInput}
+              onChange={(e) => setLimitInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const parsed = parseInt(limitInput, 10);
+                  if (!Number.isNaN(parsed)) {
+                    const clamped = Math.max(1, Math.min(40, parsed));
+                    const newParams = new URLSearchParams(params.toString());
+                    newParams.set("limit", String(clamped));
+                    newParams.set("page", "1");
+                    router.replace("?" + newParams.toString(), {
+                      scroll: false,
+                    });
+                  }
+                }
+              }}
+              className="w-16 h-8 px-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              placeholder="20"
             />
-            <label className="text-sm  ">
-              {" "}
+            <label className="text-sm whitespace-nowrap">
               /40 <strong>Limit</strong>
             </label>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {loading
           ? [...Array(limit)].map((_, i) => (
-              <div key={i} className="bg-gray-200 h-96 rounded-2xl animate-pulse"></div>
+              <div
+                key={i}
+                className="bg-gray-200 h-80 sm:h-96 rounded-2xl animate-pulse"
+              ></div>
             ))
           : products.map((product) => (
               <ProductCard

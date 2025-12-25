@@ -30,14 +30,6 @@ export default function WishlistPage() {
     if (wishlistProducts.length === 0) loadWishlist();
   }, [loadWishlist, wishlistProducts.length]);
 
-  if (loading) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center animate-fade-in">
-        Loading...
-      </div>
-    );
-  }
-
   /* ================= EMPTY STATE ================= */
   if (wishlistProducts.length === 0) {
     return (

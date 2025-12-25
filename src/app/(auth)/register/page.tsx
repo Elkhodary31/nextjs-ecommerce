@@ -8,13 +8,23 @@ import {
   RegisterFormData,
 } from "@/lib/validations/register.schema";
 import { registerService } from "@/lib/services/auth.service";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Field } from "@/components/Field/Field";
 import { useRouter } from "next/navigation";
+import { useSession, signIn } from "next-auth/react";
+import toast from "react-hot-toast";
 
 export default function RegisterPage() {
   const [error, setError] = useState<string>("");
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      toast.success("You are already logged in!");
+      router.push("/");
+    }
+  }, [status, router]);
 
   const {
     register,
@@ -24,6 +34,20 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
     mode: "onBlur",
   });
+
+  // Prevent hydration mismatch by not rendering until session is checked
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
+      </div>
+    );
+  }
+
+  // If authenticated, don't render the form (will redirect via useEffect)
+  if (status === "authenticated") {
+    return null;
+  }
 
   const onSubmit = async (data: RegisterFormData) => {
     setError(" ");
@@ -37,7 +61,23 @@ export default function RegisterPage() {
         name,
       });
       console.log("REGISTER SUCCESS");
-      router.push("/");
+
+      // Auto-login after successful registration
+      toast.success("Registration successful! Logging you in...");
+      const loginResult = await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
+
+      if (loginResult?.ok) {
+        router.push("/");
+      } else {
+        toast.error(
+          "Registration successful but login failed. Please login manually."
+        );
+        router.push("/login");
+      }
     } catch (err: any) {
       console.log("REGISTER ERROR", err);
       setError(err?.message || "Something went wrong, please try again");

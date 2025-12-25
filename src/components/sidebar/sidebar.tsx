@@ -87,7 +87,10 @@ export default function Sidebar() {
       try {
         setLoadingCategories(true);
         setLoadingBrands(true);
-        const [c, b] = await Promise.all([getAllCategories(), getAllBrands()]);
+        const [c, b] = await Promise.all([
+          getAllCategories(),
+          getAllBrands(1, 100),
+        ]);
         setCategories(c.data);
         setBrands(b.data);
       } finally {
@@ -107,7 +110,7 @@ export default function Sidebar() {
   return (
     <aside
       className={`p-4 h-full sticky top-20 overflow-y-auto bg-white shadow-sm transition-all duration-300 ${
-        scrolled ? "pt-14" : "pt-28"
+        scrolled ? "pt-14" : "pt-32"
       }`}
     >
       {/* PRICE */}
@@ -296,7 +299,7 @@ export default function Sidebar() {
       <ul
         className={`transition-all duration-300 overflow-hidden ${
           openSections.brands
-            ? "max-h-72 opacity-100 mt-2"
+            ? "max-h-72 opacity-100 mt-2 overflow-y-auto"
             : "max-h-0 opacity-0 -mt-2"
         }`}
       >
@@ -307,10 +310,10 @@ export default function Sidebar() {
                 <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
               </div>
             ))
-          : brands.slice(0, 10).map((brand) => (
+          : brands.map((brand) => (
               <label
                 key={brand._id}
-                className="flex items-center gap-2 py-1 cursor-pointer"
+                className="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-50 px-2 rounded transition-colors"
               >
                 <input
                   type="checkbox"

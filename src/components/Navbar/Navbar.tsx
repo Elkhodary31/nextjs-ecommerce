@@ -33,7 +33,7 @@ import { getAllSubcategories } from "@/lib/services/subcategory.service";
 import { ICategory } from "@/lib/interfaces/category";
 import { ISubcategory } from "@/lib/interfaces/subcategory";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useWishlistStore } from "@/lib/store/wishList.store";
 import { useCart } from "@/context/CartProvider";
 
@@ -49,16 +49,17 @@ export default function Navbar() {
   const wishListCount = useWishlistStore((state) => state.wishListCount);
   const loadWishlist = useWishlistStore((state) => state.loadWishlist);
   const { cartCount } = useCart();
+  const isAuthenticated = !!session.data?.user;
 
   const isActive = (path: string) => {
     // Extract just the path without query parameters
-    const currentPath = pathname.split('?')[0];
+    const currentPath = pathname.split("?")[0];
     return currentPath === path || (path === "/" && currentPath === "/");
   };
 
   useEffect(() => {
     loadWishlist();
-  }, [session?.data?.token]);
+  }, [session?.data, loadWishlist]);
 
   useEffect(() => {
     (async () => {
@@ -104,7 +105,10 @@ export default function Navbar() {
             {/* Logo */}
             <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
               <ShoppingBag className="w-5 md:w-7 h-5 md:h-7" />
-              <Link href="/" className="text-sm md:text-2xl font-bold whitespace-nowrap">
+              <Link
+                href="/"
+                className="text-sm md:text-2xl font-bold whitespace-nowrap"
+              >
                 Techne<span className="text-red-500">Store</span>
               </Link>
             </div>
@@ -188,7 +192,12 @@ export default function Navbar() {
                 {/* Cart */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link href="/cart" className="relative group">
+                    <Link
+                      href={
+                        isAuthenticated ? "/cart" : "/login?callbackUrl=/cart"
+                      }
+                      className="relative group"
+                    >
                       <ShoppingCart className="w-5 md:w-6 h-5 md:h-6 cursor-pointer transition-all group-hover:text-green-500 group-hover:fill-green-500" />
                       {cartCount > 0 && (
                         <span className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full text-xs w-4 h-4 flex items-center justify-center transition-transform group-hover:scale-110 font-semibold">
@@ -215,58 +224,76 @@ export default function Navbar() {
                   <TooltipContent>Wishlist</TooltipContent>
                 </Tooltip>
 
-                {/* Account Dropdown */}
-                <div className="relative account-menu-wrapper">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenAccountMenu(!openAccountMenu);
-                    }}
+                {/* Account/Login */}
+                {isAuthenticated ? (
+                  <div className="relative account-menu-wrapper">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenAccountMenu(!openAccountMenu);
+                      }}
+                      className="flex items-center gap-1 md:gap-2 cursor-pointer group transition-all duration-300 hover:text-blue-600 px-2"
+                    >
+                      <CircleUser className="w-5 md:w-6 h-5 md:h-6 transition-all duration-300 group-hover:fill-blue-600 group-hover:text-white" />
+                      <span className="hidden md:inline text-sm font-medium transition-colors duration-300 group-hover:text-blue-600">
+                        {session?.data?.user?.name || "Account"}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-300 hidden md:inline ${
+                          openAccountMenu ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {openAccountMenu && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50 animate-slide-down">
+                        <Link
+                          href="/account"
+                          className="flex items-center gap-2 px-4 py-3 hover:bg-blue-50 transition-colors rounded-t-lg text-sm duration-200 group"
+                          onClick={() => setOpenAccountMenu(false)}
+                        >
+                          <User className="w-4 h-4 flex-shrink-0 transition-colors duration-200 group-hover:text-blue-600" />
+                          <span className="transition-colors duration-200 group-hover:text-blue-600">
+                            My Account
+                          </span>
+                        </Link>
+                        <Link
+                          href="/orders"
+                          className="flex items-center gap-2 px-4 py-3 hover:bg-blue-50 transition-colors border-t text-sm duration-200 group"
+                          onClick={() => setOpenAccountMenu(false)}
+                        >
+                          <OrderIcon className="w-4 h-4 flex-shrink-0 transition-colors duration-200 group-hover:text-blue-600" />
+                          <span className="transition-colors duration-200 group-hover:text-blue-600">
+                            My Orders
+                          </span>
+                        </Link>
+                        <button
+                          className="w-full flex items-center gap-2 px-4 py-3 hover:bg-red-50 transition-colors border-t text-red-600 hover:text-red-700 rounded-b-lg text-sm duration-200 group"
+                          onClick={async () => {
+                            setOpenAccountMenu(false);
+                            await signOut({ callbackUrl: "/" });
+                          }}
+                        >
+                          <LogOut className="w-4 h-4 flex-shrink-0 transition-colors duration-200 group-hover:text-red-700" />
+                          <span className="transition-colors duration-200">
+                            Logout
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    href="/login"
                     className="flex items-center gap-1 md:gap-2 cursor-pointer group transition-all duration-300 hover:text-blue-600 px-2"
                   >
                     <CircleUser className="w-5 md:w-6 h-5 md:h-6 transition-all duration-300 group-hover:fill-blue-600 group-hover:text-white" />
                     <span className="hidden md:inline text-sm font-medium transition-colors duration-300 group-hover:text-blue-600">
-                      {session?.data?.user?.name || "Account"}
+                      Login
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform duration-300 hidden md:inline ${
-                        openAccountMenu ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {openAccountMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50 animate-slide-down">
-                      <Link
-                        href="/account"
-                        className="flex items-center gap-2 px-4 py-3 hover:bg-blue-50 transition-colors rounded-t-lg text-sm duration-200 group"
-                        onClick={() => setOpenAccountMenu(false)}
-                      >
-                        <User className="w-4 h-4 flex-shrink-0 transition-colors duration-200 group-hover:text-blue-600" />
-                        <span className="transition-colors duration-200 group-hover:text-blue-600">My Account</span>
-                      </Link>
-                      <Link
-                        href="/orders"
-                        className="flex items-center gap-2 px-4 py-3 hover:bg-blue-50 transition-colors border-t text-sm duration-200 group"
-                        onClick={() => setOpenAccountMenu(false)}
-                      >
-                        <OrderIcon className="w-4 h-4 flex-shrink-0 transition-colors duration-200 group-hover:text-blue-600" />
-                        <span className="transition-colors duration-200 group-hover:text-blue-600">My Orders</span>
-                      </Link>
-                      <button
-                        className="w-full flex items-center gap-2 px-4 py-3 hover:bg-red-50 transition-colors border-t text-red-600 hover:text-red-700 rounded-b-lg text-sm duration-200 group"
-                        onClick={() => {
-                          setOpenAccountMenu(false);
-                          // TODO: Handle logout
-                        }}
-                      >
-                        <LogOut className="w-4 h-4 flex-shrink-0 transition-colors duration-200 group-hover:text-red-700" />
-                        <span className="transition-colors duration-200">Logout</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
+                  </Link>
+                )}
               </TooltipProvider>
             </div>
 
@@ -347,8 +374,8 @@ export default function Navbar() {
           )}
 
           {!scrolled && categories.length > 0 && (
-            <div className="bg-gray-100 border-t mt-3 py-1">
-              <div className="my-container flex justify-between gap-3 py-2 overflow-x-auto">
+            <div className="hidden lg:block bg-gray-100 border-t mt-3 py-1">
+              <div className="my-container  lg:flex lg:justify-between gap-3 py-2 max-h-32 lg:max-h-none overflow-y-auto lg:overflow-x-auto lg:overflow-y-visible grid grid-cols-2 sm:grid-cols-3">
                 {categories.map((category) => {
                   const relatedSubs = subCategories.filter(
                     (sub) => sub.category === category._id
@@ -362,7 +389,7 @@ export default function Navbar() {
                     >
                       <Link
                         href={`/products?categories=${category._id}`}
-                        className="px-4 py-1.5 bg-white rounded-full border hover:bg-gray-50 transition-colors"
+                        className="px-4 py-1.5 bg-white rounded-full border hover:bg-gray-50 transition-colors block text-center whitespace-nowrap"
                       >
                         {category.name}
                       </Link>

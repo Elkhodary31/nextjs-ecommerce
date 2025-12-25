@@ -1,6 +1,7 @@
 import { IWishlistAddRemove, IWishlistResponse } from "../interfaces/wishlist";
+import { BASE_URL as API_BASE_URL } from "../constants/api";
 
-const BASE_URL = "https://ecommerce.routemisr.com/api/v1/wishlist";
+const BASE_URL = `${API_BASE_URL}/wishlist`;
 
 // ==================
 // GET WISHLIST
