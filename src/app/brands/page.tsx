@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { getAllBrands } from "@/lib/services/brand.service";
 import { IBrand } from "@/lib/interfaces/brand";
 import { IMetadata } from "@/lib/interfaces/metadata";
 import Image from "next/image";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Pagination,
   PaginationContent,
@@ -18,7 +18,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-export default function BrandsPage() {
+function BrandsPageContent() {
   const [brands, setBrands] = useState<IBrand[]>([]);
   const [metadata, setMetadata] = useState<IMetadata | null>(null);
   const [loading, setLoading] = useState(true);
@@ -194,5 +194,23 @@ export default function BrandsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function BrandsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen pt-24 bg-gray-50">
+          <div className="container mx-auto px-4 py-8">
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <BrandsPageContent />
+    </Suspense>
   );
 }
