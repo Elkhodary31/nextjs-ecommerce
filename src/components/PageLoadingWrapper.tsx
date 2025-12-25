@@ -17,15 +17,15 @@ export default function PageLoadingWrapper({
     const originalPush = router.push;
     const originalReplace = router.replace;
 
-    router.push = function (...args: any[]) {
+    router.push = ((href: string, options?: Parameters<typeof originalPush>[1]) => {
       setIsLoading(true);
-      return originalPush.apply(router, args);
-    } as any;
+      return originalPush(href, options);
+    }) as typeof router.push;
 
-    router.replace = function (...args: any[]) {
+    router.replace = ((href: string, options?: Parameters<typeof originalReplace>[1]) => {
       setIsLoading(true);
-      return originalReplace.apply(router, args);
-    } as any;
+      return originalReplace(href, options);
+    }) as typeof router.replace;
 
     return () => {
       router.push = originalPush;
