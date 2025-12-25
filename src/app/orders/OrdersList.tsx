@@ -150,7 +150,7 @@ export default function OrdersList() {
                 {order._id.slice(-8).toUpperCase()}
               </p>
               <p className="text-xs text-gray-600 mt-1">
-                {formatDate(order.createdAt)}
+                {formatDate(order.createdAt ?? new Date().toISOString())}
               </p>
             </div>
 
