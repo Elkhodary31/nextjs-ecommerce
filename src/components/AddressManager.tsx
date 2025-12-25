@@ -6,7 +6,7 @@ import {
   addAddress,
   deleteAddress,
   updateAddress,
-} from "@/lib/services/address.service.ts";
+} from "@/lib/services/address.service";
 import { IAddress, IAddressRequest } from "@/lib/interfaces/address";
 import toast from "react-hot-toast";
 import {
