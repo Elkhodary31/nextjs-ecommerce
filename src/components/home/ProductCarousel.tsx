@@ -16,7 +16,7 @@ interface Props {
 export default function ProductCarousel({ products, title = "Featured Products", speedPxPerTick = 2 }: Props) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [paused, setPaused] = useState(false);
-  const tickRef = useRef<NodeJS.Timer | null>(null);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const items = products ?? [];
   const loopItems = [...items, ...items];

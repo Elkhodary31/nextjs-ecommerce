@@ -16,7 +16,7 @@ interface Props {
 export default function CategoryCarousel({ categories, title = "Popular Categories", speedPxPerTick = 2 }: Props) {
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const [paused, setPaused] = useState(false);
-  const tickRef = useRef<NodeJS.Timer | null>(null);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const items = categories ?? [];
   const loopItems = [...items, ...items];
