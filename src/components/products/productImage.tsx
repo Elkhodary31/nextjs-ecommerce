@@ -6,7 +6,7 @@ export default function ProductImage({ product }: { product: IProduct }) {
   const [backgroundPos, setBackgroundPos] = useState("50% 50%");
   const [isZoomed, setIsZoomed] = useState(false);
 
-  const handleMouseMove = (e) => {
+  const handleMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
     const { left, top, width, height } =
       e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - left) / width) * 100;
