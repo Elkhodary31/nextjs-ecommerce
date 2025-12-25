@@ -1,19 +1,21 @@
 import { decode } from "next-auth/jwt";
 import { cookies } from "next/headers";
 
-function getSessionToken(): string | undefined {
-  const secure = cookies().get("__Secure-next-auth.session-token")?.value;
-  const standard = cookies().get("next-auth.session-token")?.value;
+async function getSessionToken(): Promise<string | undefined> {
+  const jar = await cookies();
+  const secure = jar.get("__Secure-next-auth.session-token")?.value;
+  const standard = jar.get("next-auth.session-token")?.value;
   return secure ?? standard;
 }
 
 export async function getMytoken() {
-  const session = getSessionToken();
+  const session = await getSessionToken();
+  if (!session) return null;
   const data = await decode({
     secret: process.env.NEXTAUTH_SECRET!,
-    token: session || "",
+    token: session,
   });
-  return data?.token;
+  return data?.token ?? null;
 }
 
 // Decode a raw JWT token string (e.g., the API token) without verification.
