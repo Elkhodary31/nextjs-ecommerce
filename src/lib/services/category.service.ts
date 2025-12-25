@@ -12,7 +12,7 @@ export async function getAllCategories() {
   return data;
 }
 
-export async function getCategory({ id: { id: string } }) {
+export async function getCategory(id: string) {
   const response = await fetch(`${BASE_URL}/categories/${id}`);
   const data: IResponse<ICategory> = await response.json();
   return data;
